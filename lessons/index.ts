@@ -18,6 +18,7 @@ import Lesson16 from './Lesson16';
 import Lesson17 from './Lesson17';
 import Lesson18 from './Lesson18';
 import Lesson19 from './Lesson19';
+import Lesson20 from './Lesson20';
 
 export const lessons: Lesson[] = [
     {
@@ -133,5 +134,11 @@ export const lessons: Lesson[] = [
         title: "19-Dars: Ehtimollik va So'rov (Will, May, Might)",
         description: "Kelajak, ehtimollik, ruxsat so'rash va iltimos qilish uchun 'will', 'may', 'might', 'could' kabi modal fe'llarni o'rganing.",
         component: Lesson19,
+    },
+    {
+        id: 'lesson-20',
+        title: "20-Dars: Nutq Amaliyoti (AI Bilan)",
+        description: "Sun'iy intellekt suhbatdoshi bilan ingliz tilida gaplashishni mashq qiling. Real vaqt rejimida javob oling.",
+        component: Lesson20,
     }
 ];

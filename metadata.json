@@ -1,5 +1,7 @@
 {
   "name": "Interactive English Lesson",
   "description": "An interactive web application for learning English vocabulary and grammar related to home and daily routines, featuring exercises and text-to-speech functionality.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

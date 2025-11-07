@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export interface VocabularyItem {
@@ -44,4 +43,9 @@ export interface Lesson {
     title: string;
     description: string;
     component: React.FC;
+}
+
+export interface TranscriptEntry {
+    speaker: 'user' | 'model' | 'system';
+    text: string;
 }
