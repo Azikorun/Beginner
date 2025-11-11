@@ -1,18 +1,24 @@
-
-import React from 'react';
-
 interface SectionProps {
     title: string;
     description: string;
-    children: React.ReactNode;
+    children: HTMLElement | DocumentFragment;
 }
 
-const Section: React.FC<SectionProps> = ({ title, description, children }) => (
-    <div className="my-8 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
-        <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
-        <p className="mt-2 text-gray-600 mb-6">{description}</p>
-        {children}
-    </div>
-);
+export const Section = ({ title, description, children }: SectionProps): HTMLElement => {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = "my-8 p-6 bg-white rounded-xl shadow-lg border border-gray-200";
 
-export default Section;
+    const h3 = document.createElement('h3');
+    h3.className = "text-2xl font-bold text-gray-800";
+    h3.textContent = title;
+
+    const p = document.createElement('p');
+    p.className = "mt-2 text-gray-600 mb-6";
+    p.textContent = description;
+
+    sectionDiv.appendChild(h3);
+    sectionDiv.appendChild(p);
+    sectionDiv.appendChild(children);
+
+    return sectionDiv;
+};

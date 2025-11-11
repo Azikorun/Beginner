@@ -1,24 +1,25 @@
 import { Lesson } from '../types';
-import Lesson1 from './Lesson1';
-import Lesson2 from './Lesson2';
-import Lesson3 from './Lesson3';
-import Lesson4 from './Lesson4';
-import Lesson5 from './Lesson5';
-import Lesson6 from './Lesson6';
-import Lesson7 from './Lesson7';
-import Lesson8 from './Lesson8';
-import Lesson9 from './Lesson9';
-import Lesson10 from './Lesson10';
-import Lesson11 from './Lesson11';
-import Lesson12 from './Lesson12';
-import Lesson13 from './Lesson13';
-import Lesson14 from './Lesson14';
-import Lesson15 from './Lesson15';
-import Lesson16 from './Lesson16';
-import Lesson17 from './Lesson17';
-import Lesson18 from './Lesson18';
-import Lesson19 from './Lesson19';
-import Lesson20 from './Lesson20';
+import { Lesson1 } from './Lesson1';
+import { Lesson2 } from './Lesson2';
+import { Lesson3 } from './Lesson3';
+import { Lesson4 } from './Lesson4';
+import { Lesson5 } from './Lesson5';
+import { Lesson6 } from './Lesson6';
+import { Lesson7 } from './Lesson7';
+import { Lesson8 } from './Lesson8';
+import { Lesson9 } from './Lesson9';
+import { Lesson10 } from './Lesson10';
+import { Lesson11 } from './Lesson11';
+import { Lesson12 } from './Lesson12';
+import { Lesson13 } from './Lesson13';
+import { Lesson14 } from './Lesson14';
+import { Lesson15 } from './Lesson15';
+import { Lesson16 } from './Lesson16';
+import { Lesson17 } from './Lesson17';
+import { Lesson18 } from './Lesson18';
+import { Lesson19 } from './Lesson19';
+import { Lesson20 } from './Lesson20';
+import { Lesson21 } from './Lesson21';
 
 export const lessons: Lesson[] = [
     {
@@ -140,5 +141,11 @@ export const lessons: Lesson[] = [
         title: "20-Dars: Nutq Amaliyoti (AI Bilan)",
         description: "Sun'iy intellekt suhbatdoshi bilan ingliz tilida gaplashishni mashq qiling. Real vaqt rejimida javob oling.",
         component: Lesson20,
+    },
+    {
+        id: 'lesson-21',
+        title: "21-Dars: 'To Be' Fe'li (am, is, are)",
+        description: "Bo'lish fe'lining uch asosiy shaklini o'rganing va ularni sifatlar, otlar va joylar bilan ishlating.",
+        component: Lesson21,
     }
 ];

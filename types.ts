@@ -1,5 +1,3 @@
-import React from 'react';
-
 export interface VocabularyItem {
     english: string;
     uzbek: string;
@@ -42,7 +40,7 @@ export interface Lesson {
     id: string;
     title: string;
     description: string;
-    component: React.FC;
+    component: (container: HTMLElement) => void;
 }
 
 export interface TranscriptEntry {

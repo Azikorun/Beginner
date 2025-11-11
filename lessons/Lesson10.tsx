@@ -1,58 +1,102 @@
-import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
-import Section from '../components/Section';
-import Button from '../components/Button';
-import SpinnerIcon from '../components/icons/SpinnerIcon';
+import { Section } from '../components/Section';
+import { Button } from '../components/Button';
+import { SpinnerIcon } from '../components/icons/SpinnerIcon';
 
-const ReviewSection: React.FC = () => (
-    <div className="my-8 p-6 bg-blue-50 rounded-xl shadow-lg border border-blue-200">
-        <h3 className="text-2xl font-bold text-gray-800">Takrorlash: Foydali Iboralar</h3>
-        <p className="mt-2 text-gray-600 mb-6">O'zingiz haqingizda gapirish uchun ushbu iboralardan foydalanishingiz mumkin:</p>
-        <div className="grid md:grid-cols-3 gap-4">
+const ReviewSection = (): HTMLElement => {
+    const reviewDiv = document.createElement('div');
+    reviewDiv.className = "my-8 p-6 bg-blue-50 rounded-xl shadow-lg border border-blue-200";
+    reviewDiv.innerHTML = `
+        <h3 class="text-2xl font-bold text-gray-800">Takrorlash: Foydali Iboralar</h3>
+        <p class="mt-2 text-gray-600 mb-6">O'zingiz haqingizda gapirish uchun ushbu iboralardan foydalanishingiz mumkin:</p>
+        <div class="grid md:grid-cols-3 gap-4">
             <div>
-                <h4 className="font-bold text-lg text-blue-700">Tanishuv</h4>
-                <ul className="list-disc list-inside text-gray-700">
+                <h4 class="font-bold text-lg text-blue-700">Tanishuv</h4>
+                <ul class="list-disc list-inside text-gray-700">
                     <li>My name is...</li>
                     <li>I am from...</li>
                     <li>I am [your nationality].</li>
                 </ul>
             </div>
             <div>
-                <h4 className="font-bold text-lg text-blue-700">Qobiliyatlar va Narsalar</h4>
-                <ul className="list-disc list-inside text-gray-700">
+                <h4 class="font-bold text-lg text-blue-700">Qobiliyatlar va Narsalar</h4>
+                <ul class="list-disc list-inside text-gray-700">
                     <li>I can... / I can't...</li>
                     <li>This is my...</li>
                     <li>I like...</li>
                 </ul>
             </div>
             <div>
-                <h4 className="font-bold text-lg text-blue-700">Kun Tartibi</h4>
-                <ul className="list-disc list-inside text-gray-700">
+                <h4 class="font-bold text-lg text-blue-700">Kun Tartibi</h4>
+                <ul class="list-disc list-inside text-gray-700">
                     <li>I usually get up at...</li>
                     <li>I always eat...</li>
                     <li>I sometimes...</li>
                 </ul>
             </div>
         </div>
-    </div>
-);
+    `;
+    return reviewDiv;
+};
 
 
-const Lesson10: React.FC = () => {
-    const [text, setText] = useState('');
-    const [feedback, setFeedback] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export const Lesson10 = (container: HTMLElement) => {
+    container.innerHTML = '';
+    const main = document.createElement('main');
+    main.className = "max-w-5xl mx-auto p-4 sm:p-6 lg:p-8";
 
+    const header = document.createElement('header');
+    header.className = "text-center mb-10";
+    header.innerHTML = `
+        <h1 class="text-4xl md:text-5xl font-bold text-blue-800">10-Dars: Yakuniy Dars va Kichik Loyiha</h1>
+        <p class="mt-4 text-lg text-gray-600">O'rgangan barcha narsalaringizni qo'llash vaqti keldi!</p>
+    `;
+    main.appendChild(header);
+
+    main.appendChild(ReviewSection());
+
+    const projectSectionContent = document.createDocumentFragment();
+
+    const textarea = document.createElement('textarea');
+    textarea.className = "w-full h-40 p-4 border border-gray-300 rounded-lg shadow-inner focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow";
+    textarea.placeholder = "My name is... I am from... I can... I usually...";
+    textarea.setAttribute("aria-label", "Your text about yourself");
+    projectSectionContent.appendChild(textarea);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = "mt-6 text-center";
+    projectSectionContent.appendChild(buttonContainer);
+
+    const loadingContainer = document.createElement('div');
+    loadingContainer.className = "mt-6 flex justify-center";
+    loadingContainer.style.display = 'none';
+    projectSectionContent.appendChild(loadingContainer);
+
+    const errorContainer = document.createElement('div');
+    errorContainer.className = "mt-6 p-4 bg-red-100 text-red-800 rounded-lg text-center";
+    errorContainer.setAttribute('role', 'alert');
+    errorContainer.style.display = 'none';
+    projectSectionContent.appendChild(errorContainer);
+
+    const feedbackContainer = document.createElement('div');
+    feedbackContainer.className = "mt-6 p-6 bg-green-50 border border-green-200 rounded-lg";
+    feedbackContainer.style.display = 'none';
+    projectSectionContent.appendChild(feedbackContainer);
+    
     const handleCheckText = async () => {
-        if (!text.trim()) {
-            setError("Iltimos, tekshirishdan oldin biror narsa yozing.");
+        if (!textarea.value.trim()) {
+            errorContainer.textContent = "Iltimos, tekshirishdan oldin biror narsa yozing.";
+            errorContainer.style.display = 'block';
             return;
         }
 
-        setLoading(true);
-        setFeedback('');
-        setError(null);
+        checkButton.disabled = true;
+        checkButton.textContent = 'Tekshirilmoqda...';
+        loadingContainer.innerHTML = '';
+        loadingContainer.appendChild(SpinnerIcon());
+        loadingContainer.style.display = 'flex';
+        feedbackContainer.style.display = 'none';
+        errorContainer.style.display = 'none';
 
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
@@ -66,68 +110,37 @@ const Lesson10: React.FC = () => {
 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
-                contents: `Here is the student's text:\n\n"${text}"`,
+                contents: `Here is the student's text:\n\n"${textarea.value}"`,
                 config: {
                     systemInstruction,
                 },
             });
 
-            setFeedback(response.text);
+            feedbackContainer.innerHTML = `
+                <h4 class="font-bold text-lg text-green-800 mb-2">O'qituvchining Fikri:</h4>
+                <div class="text-gray-700 whitespace-pre-wrap font-medium">${response.text}</div>
+            `;
+            feedbackContainer.style.display = 'block';
 
         } catch (err) {
             console.error("Error getting feedback:", err);
-            setError("Sun'iy intellektdan javob olishda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.");
+            errorContainer.textContent = "Sun'iy intellektdan javob olishda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring.";
+            errorContainer.style.display = 'block';
         } finally {
-            setLoading(false);
+            checkButton.disabled = false;
+            checkButton.textContent = 'Matnni Tekshirish';
+            loadingContainer.style.display = 'none';
         }
     };
 
-    return (
-        <div className="min-h-screen">
-            <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-                <header className="text-center mb-10">
-                    <h1 className="text-4xl md:text-5xl font-bold text-blue-800">10-Dars: Yakuniy Dars va Kichik Loyiha</h1>
-                    <p className="mt-4 text-lg text-gray-600">O'rgangan barcha narsalaringizni qo'llash vaqti keldi!</p>
-                </header>
+    const checkButton = Button({ onClick: handleCheckText, children: "Matnni Tekshirish" });
+    buttonContainer.appendChild(checkButton);
+    
+    main.appendChild(Section({
+        title: "Sizning Kichik Loyihangiz",
+        description: "Quyidagi maydonga o'zingiz haqingizda 3-4 ta gap yozing. Masalan: Ismingiz, qayerdansiz, nima qila olasiz va odatda nima qilasiz. Keyin 'Tekshirish' tugmasini bosing va sun'iy intellekt o'qituvchidan yordam oling.",
+        children: projectSectionContent
+    }));
 
-                <ReviewSection />
-
-                <Section title="Sizning Kichik Loyihangiz" description="Quyidagi maydonga o'zingiz haqingizda 3-4 ta gap yozing. Masalan: Ismingiz, qayerdansiz, nima qila olasiz va odatda nima qilasiz. Keyin 'Tekshirish' tugmasini bosing va sun'iy intellekt o'qituvchidan yordam oling.">
-                    <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        className="w-full h-40 p-4 border border-gray-300 rounded-lg shadow-inner focus:ring-2 focus:ring-blue-500 focus:outline-none transition-shadow"
-                        placeholder="My name is... I am from... I can... I usually..."
-                        aria-label="Your text about yourself"
-                    />
-                    <div className="mt-6 text-center">
-                        <Button onClick={handleCheckText} disabled={loading}>
-                            {loading ? 'Tekshirilmoqda...' : "Matnni Tekshirish"}
-                        </Button>
-                    </div>
-
-                    {loading && (
-                        <div className="mt-6 flex justify-center">
-                            <SpinnerIcon />
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="mt-6 p-4 bg-red-100 text-red-800 rounded-lg text-center" role="alert">
-                            {error}
-                        </div>
-                    )}
-
-                    {feedback && (
-                        <div className="mt-6 p-6 bg-green-50 border border-green-200 rounded-lg">
-                            <h4 className="font-bold text-lg text-green-800 mb-2">O'qituvchining Fikri:</h4>
-                            <div className="text-gray-700 whitespace-pre-wrap font-medium">{feedback}</div>
-                        </div>
-                    )}
-                </Section>
-            </main>
-        </div>
-    );
+    container.appendChild(main);
 };
-
-export default Lesson10;
