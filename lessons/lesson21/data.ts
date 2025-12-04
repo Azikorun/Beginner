@@ -39,7 +39,10 @@ export const VOCABULARY_DATA: VocabularyCategory[] = [
 export const SENTENCE_BUILDER_COLUMNS: SentenceBuilderColumns = {
     subject: { title: "Kim?", items: ["I", "You", "He", "She", "They"] },
     verb: { title: "Fe'l", items: ["am", "is", "are", "am not", "isn't", "aren't"] },
-    complement: { title: "Nima/Qanday?", items: ["happy", "a doctor", "tired", "students", "from here"] },
+    complement: { 
+        title: "Nima/Qanday?", 
+        items: ["happy", "sad", "a doctor", "a student", "students", "friends", "tired", "hungry", "from here"] 
+    },
 };
 
 export const ALL_BE_FORMS: VocabularyItem[] = [

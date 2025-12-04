@@ -92,12 +92,24 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
 
         // Buttons
         const buttonContainer = document.createElement('div');
-        buttonContainer.className = "mt-6 flex justify-center items-center space-x-4";
+        buttonContainer.className = "mt-6 flex justify-center items-center space-x-4 flex-wrap gap-2";
+        
         const checkButton = Button({ onClick: checkAnswer, disabled: state.feedback === 'correct', children: 'Tekshirish'});
         buttonContainer.appendChild(checkButton);
 
-        if (state.feedback === 'correct' && state.index < prompts.length - 1) {
-            const nextButton = Button({ onClick: nextPrompt, className: 'bg-green-600 hover:bg-green-700', children: 'Keyingisi &rarr;'});
+        // Skip Button
+        const skipButton = document.createElement('button');
+        skipButton.className = "text-gray-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400";
+        skipButton.textContent = "O'tkazib yuborish";
+        skipButton.onclick = handleSkip;
+        
+        // Only show skip if not correct yet (if correct, show Next)
+        if (state.feedback !== 'correct') {
+            buttonContainer.appendChild(skipButton);
+        }
+
+        if (state.feedback === 'correct') {
+            const nextButton = Button({ onClick: nextPrompt, className: 'bg-green-600 hover:bg-green-700', children: 'Keyingisi'});
             buttonContainer.appendChild(nextButton);
         }
         
@@ -123,7 +135,11 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
         if (userAnswer === prompts[state.index].correctAnswer) {
             state.feedback = 'correct';
             if (state.index === prompts.length - 1) {
-                state.completed = true;
+                // Show completion immediately if it's the last one
+                setTimeout(() => {
+                    state.completed = true;
+                    render();
+                }, 1000);
             }
         } else {
             state.feedback = 'incorrect';
@@ -137,7 +153,14 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
             state.placed = [];
             state.feedback = 'unanswered';
             render();
+        } else {
+            state.completed = true;
+            render();
         }
+    };
+
+    const handleSkip = () => {
+        nextPrompt();
     };
 
     render();
