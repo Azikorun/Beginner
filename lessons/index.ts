@@ -1,3 +1,4 @@
+
 import { Lesson } from '../types';
 import { Lesson1 } from './Lesson1';
 import { Lesson2 } from './Lesson2';
@@ -20,6 +21,7 @@ import { Lesson18 } from './Lesson18';
 import { Lesson19 } from './Lesson19';
 import { Lesson20 } from './Lesson20';
 import { Lesson21 } from './Lesson21';
+import { Lesson22 } from './Lesson22';
 
 export const lessons: Lesson[] = [
     {
@@ -147,5 +149,11 @@ export const lessons: Lesson[] = [
         title: "21-Dars: 'To Be' Fe'li (am, is, are)",
         description: "Bo'lish fe'lining uch asosiy shaklini o'rganing va ularni sifatlar, otlar va joylar bilan ishlating.",
         component: Lesson21,
+    },
+    {
+        id: 'lesson-22',
+        title: "22-Dars: Kelajak Zamon (Will)",
+        description: "Kelajakdagi rejalar va va'dalar haqida 'will' yordamida gapirishni o'rganing.",
+        component: Lesson22,
     }
 ];
