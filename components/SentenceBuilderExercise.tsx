@@ -1,6 +1,7 @@
 import { SentenceBuilderPrompt, SentenceBuilderColumns } from '../types';
 import { Button } from './Button';
 import { Section } from './Section';
+import { shuffleArray } from '../utils/helpers';
 
 type FeedbackStatus = 'unanswered' | 'correct' | 'incorrect';
 
@@ -11,9 +12,55 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
         placed: [] as { item: string; category: string }[],
         feedback: 'unanswered' as FeedbackStatus,
         completed: false,
+        currentOptions: null as Record<string, string[]> | null,
     };
 
     const mainContainer = document.createElement('div');
+
+    const getOptionsForCurrentPrompt = () => {
+        if (state.currentOptions) return state.currentOptions;
+        if (!prompts || prompts.length === 0) return {};
+
+        const currentPrompt = prompts[state.index];
+        const answerLower = currentPrompt.correctAnswer.toLowerCase();
+        const newOptions: Record<string, string[]> = {};
+
+        Object.keys(columns).forEach(cat => {
+            const col = columns[cat];
+            const allItems = col.items;
+
+            // Identify items that are required for the answer
+            // We check if the item string appears in the answer.
+            // Note: This is a simple substring check. ideally we match tokens.
+            const required = allItems.filter(item => 
+                answerLower.includes(item.toLowerCase())
+            );
+
+            // Identify distractors (items not in the answer)
+            const distractors = allItems.filter(item => 
+                !answerLower.includes(item.toLowerCase())
+            );
+
+            // We want max 4 items total.
+            // Always include required items first.
+            const MAX_ITEMS = 4;
+            
+            // If we have more required items than MAX, we must keep them all (rare case for simple sentences)
+            // Otherwise fill the rest with random distractors.
+            let selectedItems = [...required];
+            
+            if (selectedItems.length < MAX_ITEMS) {
+                const numNeeded = MAX_ITEMS - selectedItems.length;
+                const shuffledDistractors = shuffleArray(distractors);
+                selectedItems = [...selectedItems, ...shuffledDistractors.slice(0, numNeeded)];
+            }
+
+            newOptions[cat] = shuffleArray(selectedItems);
+        });
+
+        state.currentOptions = newOptions;
+        return newOptions;
+    };
 
     const render = () => {
         mainContainer.innerHTML = '';
@@ -33,6 +80,7 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
         }
 
         const currentPrompt = prompts[state.index];
+        const currentOptions = getOptionsForCurrentPrompt();
         const usedCategories = new Set(state.placed.map(item => item.category));
 
         // Prompt
@@ -67,15 +115,18 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
         // Columns with selectable words
         const columnsGrid = document.createElement('div');
         columnsGrid.className = "grid grid-cols-2 md:grid-cols-4 gap-4 my-6";
-        Object.keys(columns).forEach(cat => {
-            const col = columns[cat];
+        
+        Object.keys(currentOptions).forEach(cat => {
+            const colTitle = columns[cat].title;
+            const items = currentOptions[cat];
+            
             const colDiv = document.createElement('div');
             colDiv.className = "bg-white p-3 rounded-lg border";
-            colDiv.innerHTML = `<h4 class="text-center font-bold text-gray-600 mb-2">${col.title}</h4>`;
+            colDiv.innerHTML = `<h4 class="text-center font-bold text-gray-600 mb-2">${colTitle}</h4>`;
             
             const itemsContainer = document.createElement('div');
             itemsContainer.className = "text-center";
-            col.items.forEach(item => {
+            items.forEach(item => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = `p-2 px-3 m-1 rounded-md cursor-pointer inline-block font-semibold border transition-colors ${
                     usedCategories.has(cat)
@@ -98,13 +149,11 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
         buttonContainer.appendChild(checkButton);
 
         // Skip Button
-        const skipButton = document.createElement('button');
-        skipButton.className = "text-gray-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400";
-        skipButton.textContent = "O'tkazib yuborish";
-        skipButton.onclick = handleSkip;
-        
-        // Only show skip if not correct yet (if correct, show Next)
         if (state.feedback !== 'correct') {
+            const skipButton = document.createElement('button');
+            skipButton.className = "text-gray-600 font-semibold py-3 px-6 rounded-lg hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400";
+            skipButton.textContent = "O'tkazib yuborish";
+            skipButton.onclick = handleSkip;
             buttonContainer.appendChild(skipButton);
         }
 
@@ -132,10 +181,13 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
 
     const checkAnswer = () => {
         const userAnswer = state.placed.map(p => p.item).join(' ').toLowerCase();
-        if (userAnswer === prompts[state.index].correctAnswer) {
+        // Remove punctuation for comparison
+        const cleanUserAnswer = userAnswer.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+        const cleanCorrectAnswer = prompts[state.index].correctAnswer.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+
+        if (cleanUserAnswer === cleanCorrectAnswer) {
             state.feedback = 'correct';
             if (state.index === prompts.length - 1) {
-                // Show completion immediately if it's the last one
                 setTimeout(() => {
                     state.completed = true;
                     render();
@@ -152,6 +204,7 @@ export const SentenceBuilderExercise = ({ columns, prompts }: { columns: Sentenc
             state.index++;
             state.placed = [];
             state.feedback = 'unanswered';
+            state.currentOptions = null; // Reset options for the new prompt
             render();
         } else {
             state.completed = true;

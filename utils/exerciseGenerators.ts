@@ -25,7 +25,7 @@ export const generateMatchingQuestions = (count: number): MatchingQuestion[] => 
     return actions.slice(0, count).map((action, i) => {
         const correctAnswer = pairings[action];
         const wrongAnswers = shuffleArray(ALL_PLACES.map(p => p.english).filter(p => p !== correctAnswer));
-        const options = shuffleArray([correctAnswer, wrongAnswers[0], wrongAnswers[1]]);
+        const options = shuffleArray([correctAnswer, wrongAnswers[0], wrongAnswers[1]] as string[]);
         return {
             id: `m-q-${i}`,
             question: `I ${action}...`,

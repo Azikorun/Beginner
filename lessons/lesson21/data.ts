@@ -1,3 +1,4 @@
+
 import { VocabularyCategory, SentenceBuilderColumns, VocabularyItem } from '../../types';
 
 export const VOCABULARY_DATA: VocabularyCategory[] = [
@@ -41,7 +42,13 @@ export const SENTENCE_BUILDER_COLUMNS: SentenceBuilderColumns = {
     verb: { title: "Fe'l", items: ["am", "is", "are", "am not", "isn't", "aren't"] },
     complement: { 
         title: "Nima/Qanday?", 
-        items: ["happy", "sad", "a doctor", "a student", "students", "friends", "tired", "hungry", "from here"] 
+        items: [
+            "happy", "sad", 
+            "a doctor", "a student", "students", 
+            "friends", 
+            "tired", "hungry", 
+            "from here"
+        ] 
     },
 };
 

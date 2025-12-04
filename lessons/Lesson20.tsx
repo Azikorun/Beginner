@@ -1,4 +1,5 @@
-import { GoogleGenAI, LiveServerMessage, Modality, LiveSession } from '@google/genai';
+
+import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { TranscriptEntry } from '../types';
 import { createBlob, decode, decodeAudioData } from '../utils/audio';
 import { MicrophoneIcon } from '../components/icons/MicrophoneIcon';
@@ -12,7 +13,7 @@ export const Lesson20 = (container: HTMLElement) => {
     let transcript: TranscriptEntry[] = [];
     let status: 'idle' | 'connecting' | 'listening' | 'speaking' = 'idle';
     let error: string | null = null;
-    let sessionPromise: Promise<LiveSession> | null = null;
+    let sessionPromise: Promise<any> | null = null;
     let inputAudioContext: AudioContext | null = null;
     let outputAudioContext: AudioContext | null = null;
     let processorNode: ScriptProcessorNode | null = null;
@@ -37,247 +38,254 @@ export const Lesson20 = (container: HTMLElement) => {
     const contentWrapper = document.createElement('div');
     contentWrapper.className = "bg-white p-6 rounded-xl shadow-lg border border-gray-200";
 
-    const topBar = document.createElement('div');
-    topBar.className = "flex flex-col md:flex-row items-center justify-between mb-4";
-    topBar.innerHTML = `<h3 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Suhbat</h3>`;
-
-    const statusIndicator = document.createElement('div');
-    statusIndicator.className = "font-semibold text-gray-600 flex items-center gap-2";
+    const errorDiv = document.createElement('div');
+    errorDiv.className = "mb-4 p-4 bg-red-100 text-red-700 rounded-lg hidden";
 
     const transcriptContainer = document.createElement('div');
-    transcriptContainer.className = "w-full h-96 bg-gray-100 rounded-lg p-4 overflow-y-auto border";
-    transcriptContainer.setAttribute("aria-live", "polite");
+    transcriptContainer.className = "h-96 overflow-y-auto mb-6 p-4 border rounded-lg bg-gray-50 space-y-4";
+    transcriptContainer.innerHTML = `<p class="text-center text-gray-500 italic">Suhbatni boshlash uchun quyidagi tugmani bosing...</p>`;
 
-    const errorContainer = document.createElement('div');
-    errorContainer.className = "bg-red-100 text-red-800 p-3 rounded-md my-4 text-center";
-    errorContainer.setAttribute('role', 'alert');
-    errorContainer.style.display = 'none';
+    const controlsContainer = document.createElement('div');
+    controlsContainer.className = "flex justify-center items-center gap-4";
 
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'mt-6 text-center';
-    
-    const toggleButton = document.createElement('button');
-    toggleButton.setAttribute('aria-label', 'Start practice');
+    const actionButton = document.createElement('button');
+    actionButton.className = "flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-md focus:outline-none focus:ring-4";
     
     // --- Render Functions ---
-    const renderStatus = () => {
-        switch (status) {
-            case 'connecting':
-                statusIndicator.innerHTML = '';
-                statusIndicator.append(SpinnerIcon(), ' Bog\'lanmoqda...');
-                break;
-            case 'listening':
-                statusIndicator.innerHTML = `<span class="flex items-center text-green-600"><div class="w-3 h-3 rounded-full bg-green-500 mr-2 animate-pulse"></div>Eshitilmoqda...</span>`;
-                break;
-            case 'speaking':
-                statusIndicator.innerHTML = `<span class="flex items-center text-blue-600"><div class="w-3 h-3 rounded-full bg-blue-500 mr-2 animate-pulse"></div>AI Gapirmoqda...</span>`;
-                break;
-            case 'idle':
-            default:
-                statusIndicator.textContent = 'Amaliyotni boshlashga tayyor';
-        }
-    };
-    
-    const renderTranscript = () => {
-        transcriptContainer.innerHTML = '';
-        transcript.forEach(entry => {
-            const entryWrapper = document.createElement('div');
-            entryWrapper.className = `flex mb-3 ${entry.speaker === 'user' ? 'justify-end' : 'justify-start'}`;
-            const entryDiv = document.createElement('div');
-            entryDiv.className = `max-w-[80%] p-3 rounded-xl ${
-                entry.speaker === 'user' ? 'bg-blue-500 text-white rounded-br-none' : 
-                entry.speaker === 'model' ? 'bg-gray-200 text-gray-800 rounded-bl-none' :
-                'bg-yellow-200 text-yellow-800 text-center w-full'
-            }`;
-            entryDiv.innerHTML = `<p class="font-medium">${entry.text}</p>`;
-            entryWrapper.appendChild(entryDiv);
-            transcriptContainer.appendChild(entryWrapper);
-        });
-        transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
-    };
-    
-    const renderError = () => {
+    const render = () => {
+        // Update Error
         if (error) {
-            errorContainer.textContent = error;
-            errorContainer.style.display = 'block';
+            errorDiv.textContent = error;
+            errorDiv.classList.remove('hidden');
         } else {
-            errorContainer.style.display = 'none';
+            errorDiv.classList.add('hidden');
         }
-    };
 
-    const renderButton = () => {
-        const isIdle = status === 'idle';
-        toggleButton.innerHTML = '';
-        toggleButton.className = `px-8 py-4 rounded-full font-bold text-white text-lg shadow-lg transition-all transform hover:scale-105 flex items-center justify-center mx-auto ${!isIdle ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`;
-        toggleButton.setAttribute('aria-label', isIdle ? 'Start practice' : 'Stop practice');
+        // Update Button State
+        actionButton.className = `flex items-center gap-2 px-6 py-3 rounded-full font-bold text-white transition-all transform hover:scale-105 shadow-md focus:outline-none focus:ring-4 ${
+            status === 'idle' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-300' :
+            status === 'connecting' ? 'bg-yellow-500 cursor-wait' :
+            'bg-red-600 hover:bg-red-700 focus:ring-red-300 animate-pulse'
+        }`;
         
-        const icon = isIdle ? MicrophoneIcon({className: "h-7 w-7 mr-2"}) : StopIcon({className: "h-7 w-7 mr-2"});
-        toggleButton.append(icon, isIdle ? 'Boshlash' : 'To\'xtatish');
-    };
+        actionButton.innerHTML = '';
+        if (status === 'idle') {
+            actionButton.appendChild(MicrophoneIcon({ className: "w-6 h-6" }));
+            const span = document.createElement('span');
+            span.textContent = "Boshlash";
+            actionButton.appendChild(span);
+            actionButton.disabled = false;
+        } else if (status === 'connecting') {
+            actionButton.appendChild(SpinnerIcon());
+            const span = document.createElement('span');
+            span.textContent = "Ulanmoqda...";
+            actionButton.appendChild(span);
+            actionButton.disabled = true;
+        } else {
+            actionButton.appendChild(StopIcon({ className: "w-6 h-6" }));
+            const span = document.createElement('span');
+            span.textContent = "Tugatish";
+            actionButton.appendChild(span);
+            actionButton.disabled = false;
+        }
 
-    const updateUI = () => {
-        renderStatus();
-        renderTranscript();
-        renderError();
-        renderButton();
+        // Update Transcript
+        if (transcript.length === 0 && !currentInputTranscription && !currentOutputTranscription) {
+            transcriptContainer.innerHTML = `<p class="text-center text-gray-500 italic">Suhbatni boshlash uchun quyidagi tugmani bosing...</p>`;
+        } else {
+            transcriptContainer.innerHTML = '';
+            transcript.forEach(entry => {
+                const bubble = document.createElement('div');
+                const isUser = entry.speaker === 'user';
+                bubble.className = `max-w-[80%] p-3 rounded-xl ${
+                    isUser 
+                    ? 'ml-auto bg-blue-600 text-white rounded-tr-none' 
+                    : 'mr-auto bg-gray-200 text-gray-800 rounded-tl-none'
+                }`;
+                bubble.textContent = entry.text;
+                transcriptContainer.appendChild(bubble);
+            });
+
+            // Live User Transcription
+            if (currentInputTranscription) {
+                const bubble = document.createElement('div');
+                bubble.className = "max-w-[80%] p-3 rounded-xl ml-auto bg-blue-400 text-white rounded-tr-none opacity-70 italic";
+                bubble.textContent = currentInputTranscription + "...";
+                transcriptContainer.appendChild(bubble);
+            }
+
+            // Live Model Transcription
+            if (currentOutputTranscription) {
+                const bubble = document.createElement('div');
+                bubble.className = "max-w-[80%] p-3 rounded-xl mr-auto bg-gray-300 text-gray-800 rounded-tl-none opacity-70 italic";
+                bubble.textContent = currentOutputTranscription + "...";
+                transcriptContainer.appendChild(bubble);
+            }
+            
+            transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+        }
     };
 
     // --- Logic ---
-    const stopSession = () => {
-        console.log('Stopping session...');
-        sessionPromise?.then(session => session.close()).catch(console.error);
-        sessionPromise = null;
-        
-        mediaStream?.getTracks().forEach(track => track.stop());
-        mediaStream = null;
-        
-        processorNode?.disconnect();
-        processorNode = null;
-        
-        sourceNode?.disconnect();
-        sourceNode = null;
-
-        outputSources.forEach(source => source.stop());
+    const stopAudio = () => {
+        if (inputAudioContext) {
+            inputAudioContext.close();
+            inputAudioContext = null;
+        }
+        if (outputAudioContext) {
+            outputAudioContext.close();
+            outputAudioContext = null;
+        }
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+            mediaStream = null;
+        }
+        if (processorNode) {
+            processorNode.disconnect();
+            processorNode = null;
+        }
+        if (sourceNode) {
+            sourceNode.disconnect();
+            sourceNode = null;
+        }
+        outputSources.forEach(source => {
+            try { source.stop(); } catch(e) {}
+        });
         outputSources.clear();
-
-        inputAudioContext?.close().catch(console.error);
-        outputAudioContext?.close().catch(console.error);
-        inputAudioContext = null;
-        outputAudioContext = null;
-        
-        status = 'idle';
-        updateUI();
+        nextStartTime = 0;
     };
 
-    const startSession = async () => {
-        error = null;
-        transcript = [];
-        status = 'connecting';
-        updateUI();
-
+    const handleStart = async () => {
         try {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                throw new Error("Your browser does not support microphone access.");
-            }
-            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            status = 'connecting';
+            error = null;
+            render();
 
             inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
             outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            const outputNode = outputAudioContext.createGain();
+            outputNode.connect(outputAudioContext.destination);
+
+            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
+            
             sessionPromise = ai.live.connect({
                 model: 'gemini-2.5-flash-native-audio-preview-09-2025',
                 callbacks: {
                     onopen: () => {
-                        console.log('Session opened.');
                         status = 'listening';
-                        transcript.push({ speaker: 'system', text: "Suhbat boshlandi. Gapirishni boshlang..." });
-                        updateUI();
+                        render();
                         
+                        // Setup Input Stream
                         if (!inputAudioContext || !mediaStream) return;
-
                         sourceNode = inputAudioContext.createMediaStreamSource(mediaStream);
                         processorNode = inputAudioContext.createScriptProcessor(4096, 1, 1);
                         
-                        processorNode.onaudioprocess = (audioProcessingEvent) => {
-                            const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
+                        processorNode.onaudioprocess = (e) => {
+                            const inputData = e.inputBuffer.getChannelData(0);
                             const pcmBlob = createBlob(inputData);
-                            sessionPromise?.then((session) => {
-                                session.sendRealtimeInput({ media: pcmBlob });
-                            });
+                            if (sessionPromise) {
+                                sessionPromise.then(session => session.sendRealtimeInput({ media: pcmBlob }));
+                            }
                         };
-
+                        
                         sourceNode.connect(processorNode);
                         processorNode.connect(inputAudioContext.destination);
                     },
                     onmessage: async (message: LiveServerMessage) => {
-                        if (message.serverContent?.inputTranscription) {
-                            currentInputTranscription += message.serverContent.inputTranscription.text;
-                        }
-                        if (message.serverContent?.outputTranscription) {
-                            if (status !== 'speaking') { status = 'speaking'; renderStatus(); }
+                         if (message.serverContent?.outputTranscription) {
                             currentOutputTranscription += message.serverContent.outputTranscription.text;
+                            render();
+                        } else if (message.serverContent?.inputTranscription) {
+                            currentInputTranscription += message.serverContent.inputTranscription.text;
+                            render();
                         }
 
                         if (message.serverContent?.turnComplete) {
-                            const fullInput = currentInputTranscription.trim();
-                            const fullOutput = currentOutputTranscription.trim();
-                            if (fullInput) transcript.push({ speaker: 'user', text: fullInput });
-                            if (fullOutput) transcript.push({ speaker: 'model', text: fullOutput });
-                            currentInputTranscription = "";
-                            currentOutputTranscription = "";
-                            status = 'listening';
-                            updateUI();
+                            if (currentInputTranscription) {
+                                transcript.push({ speaker: 'user', text: currentInputTranscription });
+                                currentInputTranscription = "";
+                            }
+                            if (currentOutputTranscription) {
+                                transcript.push({ speaker: 'model', text: currentOutputTranscription });
+                                currentOutputTranscription = "";
+                            }
+                            render();
                         }
 
-                        const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-                        if (base64Audio && outputAudioContext) {
-                            nextStartTime = Math.max(nextStartTime, outputAudioContext.currentTime);
-                            const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);
+                        const audioData = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
+                        if (audioData && outputAudioContext) {
+                             if (nextStartTime < outputAudioContext.currentTime) {
+                                nextStartTime = outputAudioContext.currentTime;
+                            }
+                            
+                            const audioBuffer = await decodeAudioData(
+                                decode(audioData),
+                                outputAudioContext,
+                                24000,
+                                1
+                            );
+                            
                             const source = outputAudioContext.createBufferSource();
                             source.buffer = audioBuffer;
-                            source.connect(outputAudioContext.destination);
-                            source.addEventListener('ended', () => {
-                                outputSources.delete(source);
-                                if (outputSources.size === 0 && status === 'speaking') {
-                                    status = 'listening';
-                                    renderStatus();
-                                }
-                            });
+                            source.connect(outputNode);
+                            source.onended = () => outputSources.delete(source);
                             source.start(nextStartTime);
                             nextStartTime += audioBuffer.duration;
                             outputSources.add(source);
                         }
                     },
                     onclose: () => {
-                        console.log('Session closed.');
-                        stopSession();
+                        status = 'idle';
+                        stopAudio();
+                        render();
                     },
-                    onerror: (e: ErrorEvent) => {
-                        console.error('Session error:', e);
-                        error = "Suhbatda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.";
-                        stopSession();
-                    },
+                    onerror: (err) => {
+                        console.error(err);
+                        error = "Aloqa uzildi. Iltimos qayta urinib ko'ring.";
+                        status = 'idle';
+                        stopAudio();
+                        render();
+                    }
                 },
                 config: {
                     responseModalities: [Modality.AUDIO],
                     inputAudioTranscription: {},
                     outputAudioTranscription: {},
-                    speechConfig: {
-                        voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } },
-                    },
-                    systemInstruction: `You are a friendly and patient English teacher named 'Gem'. 
-                    Your student is a beginner whose native language is Uzbek. 
-                    Keep your sentences short and simple. Use beginner-level vocabulary. 
-                    Speak clearly and a little slowly.
-                    Start by saying "Hello! I'm Gem, your English practice partner. Let's talk. How are you today?". 
-                    Ask simple questions about topics like daily routines, home, food, or abilities to keep the conversation going.
-                    If the user speaks Uzbek, gently encourage them to try in English.`,
-                },
+                    systemInstruction: "You are a helpful English teacher for a beginner student. Speak clearly, slowly, and simply. Correct their mistakes gently.",
+                }
             });
 
-        } catch (err: any) {
-            console.error("Failed to start session:", err);
-            error = err.message || "Mikrofonni ishga tushirib bo'lmadi.";
+        } catch (err) {
+            console.error(err);
+            error = "Mikrofon yoki tarmoq xatoligi.";
             status = 'idle';
-            updateUI();
-        }
-    };
-    
-    toggleButton.onclick = () => {
-        if (status === 'idle') {
-            startSession();
-        } else {
-            stopSession();
+            stopAudio();
+            render();
         }
     };
 
-    // --- Initial Assembly ---
-    topBar.appendChild(statusIndicator);
-    buttonContainer.appendChild(toggleButton);
-    contentWrapper.append(topBar, transcriptContainer, errorContainer, buttonContainer);
+    const handleStop = () => {
+        if (sessionPromise) {
+            sessionPromise.then(session => session.close());
+        }
+        stopAudio();
+        status = 'idle';
+        render();
+    };
+
+    actionButton.onclick = () => {
+        if (status === 'idle') handleStart();
+        else handleStop();
+    };
+
+    // --- Assembly ---
+    contentWrapper.append(errorDiv, transcriptContainer, controlsContainer);
+    controlsContainer.appendChild(actionButton);
     main.append(header, contentWrapper);
     container.appendChild(main);
-    updateUI();
+
+    // Initial Render
+    render();
 };
