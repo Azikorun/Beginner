@@ -22,6 +22,7 @@ import { Lesson19 } from './Lesson19';
 import { Lesson20 } from './Lesson20';
 import { Lesson21 } from './Lesson21';
 import { Lesson22 } from './Lesson22';
+import { Lesson23 } from './Lesson23';
 
 export const lessons: Lesson[] = [
     {
@@ -155,5 +156,11 @@ export const lessons: Lesson[] = [
         title: "22-Dars: Kelajak Zamon (Will)",
         description: "Kelajakdagi rejalar va va'dalar haqida 'will' yordamida gapirishni o'rganing.",
         component: Lesson22,
+    },
+    {
+        id: 'lesson-23',
+        title: "23-Dars: Transport va Sayohat",
+        description: "Transport turlari, 'by car/bus' va 'on foot' iboralarini to'g'ri ishlatishni o'rganing.",
+        component: Lesson23,
     }
 ];
