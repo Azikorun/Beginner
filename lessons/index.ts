@@ -23,6 +23,7 @@ import { Lesson20 } from './Lesson20';
 import { Lesson21 } from './Lesson21';
 import { Lesson22 } from './Lesson22';
 import { Lesson23 } from './Lesson23';
+import { Lesson24 } from './Lesson24';
 
 export const lessons: Lesson[] = [
     {
@@ -162,5 +163,11 @@ export const lessons: Lesson[] = [
         title: "23-Dars: Transport va Sayohat",
         description: "Transport turlari, 'by car/bus' va 'on foot' iboralarini to'g'ri ishlatishni o'rganing.",
         component: Lesson23,
+    },
+    {
+        id: 'lesson-24',
+        title: "24-Dars: So'roq So'zlar (Who, What, Where)",
+        description: "Savol berishni va 'WH-' so'roq so'zlarini to'g'ri ishlatishni o'rganing.",
+        component: Lesson24,
     }
 ];
