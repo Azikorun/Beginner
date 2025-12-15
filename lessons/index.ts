@@ -24,6 +24,7 @@ import { Lesson21 } from './Lesson21';
 import { Lesson22 } from './Lesson22';
 import { Lesson23 } from './Lesson23';
 import { Lesson24 } from './Lesson24';
+import { Lesson25 } from './Lesson25';
 
 export const lessons: Lesson[] = [
     {
@@ -169,5 +170,11 @@ export const lessons: Lesson[] = [
         title: "24-Dars: So'roq So'zlar (Who, What, Where)",
         description: "Savol berishni va 'WH-' so'roq so'zlarini to'g'ri ishlatishni o'rganing.",
         component: Lesson24,
+    },
+    {
+        id: 'lesson-25',
+        title: "25-Dars: Ob-havo (The Weather)",
+        description: "Ob-havo haqida gapirishni va haroratni tasvirlashni o'rganing.",
+        component: Lesson25,
     }
 ];

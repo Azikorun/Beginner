@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise 3: Sentence Builder (Standalone)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-4xl bg-white rounded-xl shadow-xl overflow-hidden min-h-[500px]">
+        <!-- App content will be rendered here -->
+    </div>
+
+    <script>
+        // --- Helpers ---
+        const shuffleArray = (array) => {
+            let a = [...array];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        };
+
+        // --- Components ---
+        
+        const Button = ({ onClick, children, className = '', disabled = false }) => {
+            const button = document.createElement('button');
+            button.onclick = onClick;
+            button.disabled = disabled;
+            button.className = `bg-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`;
+            
+            if (typeof children === 'string') {
+                button.textContent = children;
+            } else {
+                button.appendChild(children);
+            }
+            return button;
+        };
+
+        // --- Exercise Logic ---
+
+        const SentenceBuilderExercise = ({ columns, prompts }) => {
+            let state = {
+                index: 0,
+                placed: [], // { item: string, category: string }
+                feedback: 'unanswered', // 'unanswered' | 'correct' | 'incorrect'
+                completed: false,
+                currentOptions: null,
+            };
+
+            const container = document.createElement('div');
+            container.className = "p-6";
+
+            // Helper to ensure correct words are in the options
+            const getOptionsForCurrentPrompt = () => {
+                if (state.currentOptions) return state.currentOptions;
+                if (!prompts || prompts.length === 0) return {};
+
+                const currentPrompt = prompts[state.index];
+                const answerLower = currentPrompt.correctAnswer.toLowerCase();
+                const newOptions = {};
+
+                Object.keys(columns).forEach(cat => {
+                    const col = columns[cat];
+                    const allItems = col.items;
+
+                    // Required items (appear in the answer)
+                    const required = allItems.filter(item => 
+                        answerLower.includes(item.toLowerCase())
+                    );
+
+                    // Distractors
+                    const distractors = allItems.filter(item => 
+                        !answerLower.includes(item.toLowerCase())
+                    );
+
+                    // Max 4 items, always include required
+                    const MAX_ITEMS = 4;
+                    let selectedItems = [...required];
+                    
+                    if (selectedItems.length < MAX_ITEMS) {
+                        const numNeeded = MAX_ITEMS - selectedItems.length;
+                        const shuffledDistractors = shuffleArray(distractors);
+                        selectedItems = [...selectedItems, ...shuffledDistractors.slice(0, numNeeded)];
+                    }
+
+                    newOptions[cat] = shuffleArray(selectedItems);
+                });
+
+                state.currentOptions = newOptions;
+                return newOptions;
+            };
+
+            const render = () => {
+                container.innerHTML = '';
+
+                // header
+                const header = document.createElement('h2');
+                header.className = "text-2xl font-bold text-gray-800 mb-4 border-b pb-2";
+                header.textContent = "Mashq 3: Gap Quruvchi";
+                container.appendChild(header);
+
+                const desc = document.createElement('p');
+                desc.className = "text-gray-600 mb-6";
+                desc.textContent = "Tarjimaga mos gapni so'zlarni tanlash orqali yig'ing.";
+                container.appendChild(desc);
+
+                if (state.completed) {
+                    const successDiv = document.createElement('div');
+                    successDiv.className = "text-center p-8 bg-green-100 rounded-lg";
+                    successDiv.innerHTML = `
+                        <h3 class="text-3xl font-bold text-green-800">Tabriklaymiz!</h3>
+                        <p class="mt-2 text-lg text-green-700">Siz barcha topshiriqlarni bajardingiz!</p>
+                        <button onclick="location.reload()" class="mt-4 bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition-colors">Qayta Boshlash</button>
+                    `;
+                    container.appendChild(successDiv);
+                    return;
+                }
+
+                const currentPrompt = prompts[state.index];
+                const currentOptions = getOptionsForCurrentPrompt();
+                const usedCategories = new Set(state.placed.map(item => item.category));
+
+                // Prompt Box
+                const promptDiv = document.createElement('div');
+                promptDiv.className = "text-center p-6 bg-blue-50 rounded-lg mb-6 border border-blue-100";
+                promptDiv.innerHTML = `
+                    <p class="text-xs text-blue-500 uppercase font-bold tracking-widest mb-1">Topshiriq ${state.index + 1} / ${prompts.length}</p>
+                    <p class="text-2xl font-bold text-gray-800">"${currentPrompt.prompt}"</p>
+                `;
+                container.appendChild(promptDiv);
+
+                // Answer Box (Placed Items)
+                const placedBox = document.createElement('div');
+                const boxClasses = state.feedback === 'correct' ? 'border-green-500 bg-green-50' :
+                                   state.feedback === 'incorrect' ? 'border-red-500 bg-red-50' :
+                                   'border-blue-300 bg-white';
+                placedBox.className = `p-4 border-2 border-dashed rounded-lg my-6 min-h-[90px] text-center flex justify-center items-center flex-wrap gap-3 transition-all duration-300 ${boxClasses}`;
+
+                if (state.placed.length === 0) {
+                    placedBox.innerHTML = `<span class="text-gray-400 select-none italic">So'zlarni tanlang...</span>`;
+                } else {
+                    state.placed.forEach((placedItem, i) => {
+                        const span = document.createElement('span');
+                        span.className = "px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-lg font-bold text-gray-800 cursor-pointer hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-all transform active:scale-95";
+                        span.textContent = placedItem.item;
+                        span.title = "Olib tashlash";
+                        span.onclick = () => handleReturn(i);
+                        placedBox.appendChild(span);
+                    });
+                }
+                container.appendChild(placedBox);
+
+                // Options Grid
+                const columnsGrid = document.createElement('div');
+                columnsGrid.className = "grid grid-cols-2 md:grid-cols-4 gap-4 mb-8";
+                
+                Object.keys(currentOptions).forEach(cat => {
+                    const colTitle = columns[cat].title;
+                    const items = currentOptions[cat];
+                    
+                    const colDiv = document.createElement('div');
+                    colDiv.className = "bg-gray-50 p-3 rounded-lg border border-gray-200";
+                    colDiv.innerHTML = `<h4 class="text-center text-xs font-bold text-gray-500 uppercase mb-3 tracking-wider">${colTitle}</h4>`;
+                    
+                    const itemsContainer = document.createElement('div');
+                    itemsContainer.className = "flex flex-col gap-2";
+                    
+                    items.forEach(item => {
+                        const isUsed = usedCategories.has(cat);
+                        const itemBtn = document.createElement('button');
+                        itemBtn.className = `w-full text-center px-2 py-2.5 rounded-md font-medium text-sm transition-all duration-200 ${
+                            isUsed
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-50'
+                                : 'bg-white text-blue-800 border border-blue-100 hover:bg-blue-50 hover:border-blue-300 shadow-sm'
+                        }`;
+                        itemBtn.textContent = item;
+                        if (!isUsed) {
+                            itemBtn.onclick = () => handlePlace(item, cat);
+                        }
+                        itemsContainer.appendChild(itemBtn);
+                    });
+                    colDiv.appendChild(itemsContainer);
+                    columnsGrid.appendChild(colDiv);
+                });
+                container.appendChild(columnsGrid);
+
+                // Actions
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = "flex justify-center items-center gap-3 border-t pt-6";
+                
+                const checkButton = Button({ 
+                    onClick: checkAnswer, 
+                    disabled: state.placed.length === 0 || state.feedback === 'correct', 
+                    children: 'Tekshirish'
+                });
+                buttonContainer.appendChild(checkButton);
+
+                if (state.feedback !== 'correct') {
+                    const skipButton = document.createElement('button');
+                    skipButton.className = "text-gray-500 hover:text-gray-700 hover:bg-gray-100 font-semibold py-3 px-6 rounded-lg transition-colors";
+                    skipButton.textContent = "O'tkazib yuborish";
+                    skipButton.onclick = handleSkip;
+                    buttonContainer.appendChild(skipButton);
+                }
+
+                if (state.feedback === 'correct') {
+                    const nextButton = Button({ 
+                        onClick: nextPrompt, 
+                        className: 'bg-green-600 hover:bg-green-700 ml-2', 
+                        children: 'Keyingisi'
+                    });
+                    buttonContainer.appendChild(nextButton);
+                }
+
+                container.appendChild(buttonContainer);
+            };
+
+            // Logic Handlers
+            const handlePlace = (item, category) => {
+                const usedCategories = new Set(state.placed.map(p => p.category));
+                if (!usedCategories.has(category)) {
+                    state.placed.push({ item, category });
+                    render();
+                }
+            };
+
+            const handleReturn = (itemIndex) => {
+                state.placed = state.placed.filter((_, idx) => idx !== itemIndex);
+                state.feedback = 'unanswered';
+                render();
+            };
+
+            const checkAnswer = () => {
+                const userAnswer = state.placed.map(p => p.item).join(' ').toLowerCase();
+                const cleanUserAnswer = userAnswer.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+                const cleanCorrectAnswer = prompts[state.index].correctAnswer.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g,"");
+
+                if (cleanUserAnswer === cleanCorrectAnswer) {
+                    state.feedback = 'correct';
+                    if (state.index === prompts.length - 1) {
+                        setTimeout(() => {
+                           state.completed = true;
+                           render();
+                        }, 1500);
+                    }
+                } else {
+                    state.feedback = 'incorrect';
+                }
+                render();
+            };
+
+            const nextPrompt = () => {
+                if (state.index < prompts.length - 1) {
+                    state.index++;
+                    state.placed = [];
+                    state.feedback = 'unanswered';
+                    state.currentOptions = null;
+                    render();
+                } else {
+                    state.completed = true;
+                    render();
+                }
+            };
+
+            const handleSkip = () => {
+                 nextPrompt();
+            };
+
+            // Initial Render
+            render();
+            return container;
+        };
+
+        // --- Data ---
+        
+        // Example data from Lesson 21 (To Be)
+        const columns = {
+            subject: { title: "Kim?", items: ["I", "You", "He", "She", "They"] },
+            verb: { title: "Fe'l", items: ["am", "is", "are", "am not", "isn't", "aren't"] },
+            complement: { 
+                title: "Nima/Qanday?", 
+                items: [
+                    "happy", "sad", 
+                    "a doctor", "a student", "students", 
+                    "friends", 
+                    "tired", "hungry", 
+                    "from here"
+                ] 
+            },
+        };
+
+        const prompts = [
+            { id: 1, prompt: "Men talabaman", correctAnswer: "i am a student" },
+            { id: 2, prompt: "Ular do'stlar", correctAnswer: "they are friends" },
+            { id: 3, prompt: "Siz charchagansiz", correctAnswer: "you are tired" },
+            { id: 4, prompt: "U (qiz bola) xafa", correctAnswer: "she is sad" },
+            { id: 5, prompt: "Men och emasman", correctAnswer: "i am not hungry" }, // Added to test "am not" which needs "hungry" in distractor logic
+            { id: 6, prompt: "U (o'g'il bola) shifokor emas", correctAnswer: "he isn't a doctor" },
+        ];
+
+        // --- Init ---
+        const app = document.getElementById('app');
+        const exerciseComponent = SentenceBuilderExercise({ columns, prompts: shuffleArray(prompts) });
+        app.appendChild(exerciseComponent);
+
+    </script>
+</body>
+</html>
