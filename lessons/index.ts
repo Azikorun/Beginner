@@ -25,6 +25,7 @@ import { Lesson22 } from './Lesson22';
 import { Lesson23 } from './Lesson23';
 import { Lesson24 } from './Lesson24';
 import { Lesson25 } from './Lesson25';
+import { Lesson26 } from './Lesson26';
 
 export const lessons: Lesson[] = [
     {
@@ -176,5 +177,11 @@ export const lessons: Lesson[] = [
         title: "25-Dars: Ob-havo (The Weather)",
         description: "Ob-havo haqida gapirishni va haroratni tasvirlashni o'rganing.",
         component: Lesson25,
+    },
+    {
+        id: 'lesson-26',
+        title: "26-Dars: Ekologik Muammolar",
+        description: "Tabiatni asrash va ekologik muammolar haqida ingliz tilida gapirishni o'rganing.",
+        component: Lesson26,
     }
 ];
