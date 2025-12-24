@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Exercise Components Library</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .exercise-card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); border: 1px solid #e5e7eb; padding: 1.5rem; margin-bottom: 2rem; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Exercise Component Library</h1>
+            <p class="text-gray-600">Copy the functions from the script tag below to use in your app.</p>
+        </header>
+
+        <!-- Container for Demos -->
+        <div id="exercise-demo-container"></div>
+    </div>
+
+    <script>
+        /**
+         * UTILS
+         */
+        const shuffleArray = (array) => {
+            let a = [...array];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        };
+
+        /**
+         * COMPONENT 1: Matching Exercise
+         * @param {Object} data - { title, description, questions: [{id, question, options: [{value, label}], correctAnswer}] }
+         */
+        const createMatchingExercise = (data) => {
+            const container = document.createElement('div');
+            container.className = "exercise-card";
+            
+            const state = { answers: {} };
+
+            container.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-2">${data.title}</h3>
+                <p class="text-gray-600 mb-6">${data.description}</p>
+                <div class="space-y-4" id="questions-list"></div>
+                <div class="mt-6 flex flex-col items-center">
+                    <button id="check-btn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 transition-all">Check Answers</button>
+                    <div id="feedback" class="mt-4 p-3 rounded-lg font-bold hidden w-full text-center"></div>
+                </div>
+            `;
+
+            const list = container.querySelector('#questions-list');
+            const selectRefs = {};
+
+            data.questions.forEach(q => {
+                const item = document.createElement('div');
+                item.className = "flex flex-col sm:flex-row items-center justify-between p-3 bg-gray-50 rounded-lg border border-transparent transition-all";
+                
+                const span = document.createElement('span');
+                span.className = "font-medium text-gray-700 mb-2 sm:mb-0";
+                span.textContent = q.question;
+
+                const select = document.createElement('select');
+                select.className = "p-2 border border-gray-300 rounded-md w-full sm:w-52 outline-none focus:ring-2 focus:ring-blue-400";
+                select.innerHTML = `<option value="" disabled selected>Select...</option>` + 
+                                   q.options.map(opt => `<option value="${opt.value}">${opt.label}</option>`).join('');
+                
+                select.onchange = (e) => state.answers[q.id] = e.target.value;
+                selectRefs[q.id] = select;
+
+                item.append(span, select);
+                list.appendChild(item);
+            });
+
+            container.querySelector('#check-btn').onclick = () => {
+                let correct = 0;
+                data.questions.forEach(q => {
+                    const isCorrect = state.answers[q.id] === q.correctAnswer;
+                    selectRefs[q.id].className = `p-2 border rounded-md w-full sm:w-52 outline-none transition-all ${
+                        isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
+                    }`;
+                    if (isCorrect) correct++;
+                });
+
+                const fb = container.querySelector('#feedback');
+                fb.textContent = `Result: ${correct} / ${data.questions.length} correct.`;
+                fb.className = `mt-4 p-3 rounded-lg font-bold block w-full text-center ${correct === data.questions.length ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`;
+            };
+
+            return container;
+        };
+
+        /**
+         * COMPONENT 2: Click to Place (Unscramble)
+         * @param {Object} data - { title, description, puzzles: [{id, chunks: [], correctAnswer}] }
+         */
+        const createClickToPlaceExercise = (data) => {
+            const container = document.createElement('div');
+            container.className = "exercise-card";
+
+            let state = data.puzzles.reduce((acc, p) => ({
+                ...acc,
+                [p.id]: { available: [...p.chunks], placed: [], feedback: 'none' }
+            }), {});
+
+            container.innerHTML = `
+                <h3 class="text-xl font-bold text-gray-800 mb-2">${data.title}</h3>
+                <p class="text-gray-600 mb-6">${data.description}</p>
+                <div id="puzzles-container" class="space-y-8"></div>
+                <div class="mt-8 flex justify-center gap-4">
+                    <button id="check-btn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 transition-all">Check</button>
+                    <button id="reset-btn" class="bg-gray-200 text-gray-700 font-bold py-2 px-8 rounded-lg hover:bg-gray-300 transition-all">Reset</button>
+                </div>
+                <div id="total-fb" class="mt-4 p-3 rounded-lg font-bold hidden text-center"></div>
+            `;
+
+            const renderPuzzle = (id) => {
+                const pState = state[id];
+                const pEl = container.querySelector(`[data-id="${id}"]`);
+                
+                const availableBox = pEl.querySelector('.available-box');
+                const placedBox = pEl.querySelector('.placed-box');
+
+                availableBox.innerHTML = '';
+                pState.available.forEach((chunk, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "bg-yellow-400 text-sm font-bold px-3 py-1.5 rounded m-1 hover:bg-yellow-500 transition-transform active:scale-95";
+                    btn.textContent = chunk;
+                    btn.onclick = () => {
+                        pState.placed.push(pState.available.splice(i, 1)[0]);
+                        renderPuzzle(id);
+                    };
+                    availableBox.appendChild(btn);
+                });
+
+                placedBox.innerHTML = '';
+                if (pState.placed.length === 0) {
+                    placedBox.innerHTML = `<span class="text-gray-400 italic text-sm">Tap words to build...</span>`;
+                } else {
+                    pState.placed.forEach((chunk, i) => {
+                        const btn = document.createElement('button');
+                        btn.className = "bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1.5 rounded m-1 hover:bg-red-100 hover:text-red-800 transition-colors";
+                        btn.textContent = chunk;
+                        btn.onclick = () => {
+                            pState.available.push(pState.placed.splice(i, 1)[0]);
+                            renderPuzzle(id);
+                        };
+                        placedBox.appendChild(btn);
+                    });
+                }
+
+                // Feedback
+                placedBox.className = `placed-box mt-2 p-3 border-2 border-dashed rounded-lg min-h-[50px] flex flex-wrap items-center justify-center transition-colors ${
+                    pState.feedback === 'correct' ? 'border-green-500 bg-green-50' : 
+                    pState.feedback === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50'
+                }`;
+            };
+
+            data.puzzles.forEach(p => {
+                const pEl = document.createElement('div');
+                pEl.dataset.id = p.id;
+                pEl.innerHTML = `<div class="available-box text-center"></div><div class="placed-box"></div>`;
+                container.querySelector('#puzzles-container').appendChild(pEl);
+                renderPuzzle(p.id);
+            });
+
+            container.querySelector('#check-btn').onclick = () => {
+                let correctCount = 0;
+                data.puzzles.forEach(p => {
+                    const ans = state[p.id].placed.join(' ').toLowerCase();
+                    const isCorrect = ans === p.correctAnswer.toLowerCase();
+                    state[p.id].feedback = isCorrect ? 'correct' : 'incorrect';
+                    if (isCorrect) correctCount++;
+                    renderPuzzle(p.id);
+                });
+                const totalFb = container.querySelector('#total-fb');
+                totalFb.textContent = `Score: ${correctCount} / ${data.puzzles.length}`;
+                totalFb.className = `mt-4 p-3 rounded-lg font-bold block text-center ${correctCount === data.puzzles.length ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`;
+            };
+
+            container.querySelector('#reset-btn').onclick = () => {
+                state = data.puzzles.reduce((acc, p) => ({
+                    ...acc,
+                    [p.id]: { available: [...p.chunks], placed: [], feedback: 'none' }
+                }), {});
+                data.puzzles.forEach(p => renderPuzzle(p.id));
+                container.querySelector('#total-fb').classList.add('hidden');
+            };
+
+            return container;
+        };
+
+        /**
+         * COMPONENT 3: Sentence Builder (Column-based)
+         * @param {Object} data - { title, description, columns: {catId: {title, items}}, prompts: [{prompt, correctAnswer}] }
+         */
+        const createSentenceBuilder = (data) => {
+            const container = document.createElement('div');
+            container.className = "exercise-card";
+
+            let state = {
+                index: 0,
+                placed: [], // {item, category}
+                feedback: 'none',
+                options: null
+            };
+
+            const getOptions = () => {
+                if (state.options) return state.options;
+                const prompt = data.prompts[state.index];
+                const ans = prompt.correctAnswer.toLowerCase();
+                const opts = {};
+                
+                Object.keys(data.columns).forEach(cat => {
+                    const col = data.columns[cat];
+                    const required = col.items.filter(i => ans.includes(i.toLowerCase()));
+                    const distractors = col.items.filter(i => !ans.includes(i.toLowerCase()));
+                    opts[cat] = shuffleArray([...required, ...shuffleArray(distractors).slice(0, 2)]);
+                });
+                state.options = opts;
+                return opts;
+            };
+
+            const render = () => {
+                container.innerHTML = `
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">${data.title}</h3>
+                    <p class="text-gray-600 mb-6">${data.description}</p>
+                    <div id="builder-content"></div>
+                `;
+
+                if (state.index >= data.prompts.length) {
+                    container.querySelector('#builder-content').innerHTML = `
+                        <div class="text-center p-10 bg-green-50 rounded-xl border border-green-200">
+                            <h2 class="text-3xl font-bold text-green-800">Completed!</h2>
+                            <button onclick="location.reload()" class="mt-4 text-blue-600 font-bold hover:underline">Restart Library Demo</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const prompt = data.prompts[state.index];
+                const opts = getOptions();
+                const usedCats = new Set(state.placed.map(p => p.category));
+
+                const content = container.querySelector('#builder-content');
+                content.innerHTML = `
+                    <div class="bg-gray-100 p-4 rounded-lg text-center mb-6">
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Prompt ${state.index + 1}/${data.prompts.length}</p>
+                        <p class="text-xl font-bold text-blue-800">"${prompt.prompt}"</p>
+                    </div>
+
+                    <div id="target-box" class="p-4 border-2 border-dashed rounded-xl min-h-[80px] flex flex-wrap items-center justify-center gap-2 mb-8 transition-colors ${
+                        state.feedback === 'correct' ? 'border-green-500 bg-green-50' : 
+                        state.feedback === 'incorrect' ? 'border-red-500 bg-red-50' : 'border-blue-200 bg-white'
+                    }"></div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                        ${Object.keys(opts).map(cat => `
+                            <div class="bg-gray-50 p-2 rounded border border-gray-200">
+                                <p class="text-[10px] font-black text-gray-400 uppercase mb-2 text-center">${data.columns[cat].title}</p>
+                                <div class="flex flex-col gap-2" data-cat="${cat}"></div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="flex justify-center items-center gap-4">
+                        <button id="check-btn" class="bg-blue-600 text-white font-bold py-2 px-8 rounded-lg hover:bg-blue-700 disabled:opacity-50">Check</button>
+                        <button id="skip-btn" class="text-gray-500 font-bold hover:text-gray-800">Skip</button>
+                        ${state.feedback === 'correct' ? `<button id="next-btn" class="bg-green-600 text-white font-bold py-2 px-8 rounded-lg animate-bounce">Next &rarr;</button>` : ''}
+                    </div>
+                `;
+
+                // Render words in target
+                const target = content.querySelector('#target-box');
+                if (state.placed.length === 0) target.innerHTML = `<span class="text-gray-400 italic">Select words from categories below...</span>`;
+                state.placed.forEach((p, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "bg-white border-2 border-gray-200 px-3 py-1.5 rounded-lg font-bold text-lg hover:border-red-400 hover:text-red-500 transition-all";
+                    btn.textContent = p.item;
+                    btn.onclick = () => {
+                        state.placed.splice(i, 1);
+                        state.feedback = 'none';
+                        render();
+                    };
+                    target.appendChild(btn);
+                });
+
+                // Render words in categories
+                Object.keys(opts).forEach(cat => {
+                    const catBox = content.querySelector(`[data-cat="${cat}"]`);
+                    opts[cat].forEach(item => {
+                        const btn = document.createElement('button');
+                        const isUsed = usedCats.has(cat);
+                        btn.className = `text-sm font-bold p-2 rounded transition-all ${isUsed ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white shadow-sm border border-blue-100 text-blue-700 hover:bg-blue-50 hover:border-blue-400'}`;
+                        btn.textContent = item;
+                        if (!isUsed) {
+                            btn.onclick = () => {
+                                state.placed.push({ item, category: cat });
+                                render();
+                            };
+                        }
+                        catBox.appendChild(btn);
+                    });
+                });
+
+                // Button events
+                content.querySelector('#check-btn').onclick = () => {
+                    const ans = state.placed.map(p => p.item).join(' ').toLowerCase().replace(/[.,!]/g, "");
+                    const targetAns = prompt.correctAnswer.toLowerCase().replace(/[.,!]/g, "");
+                    state.feedback = ans === targetAns ? 'correct' : 'incorrect';
+                    render();
+                };
+
+                content.querySelector('#skip-btn').onclick = () => {
+                    state.index++;
+                    state.placed = [];
+                    state.feedback = 'none';
+                    state.options = null;
+                    render();
+                };
+
+                if (state.feedback === 'correct') {
+                    content.querySelector('#next-btn').onclick = () => {
+                        state.index++;
+                        state.placed = [];
+                        state.feedback = 'none';
+                        state.options = null;
+                        render();
+                    };
+                }
+            };
+
+            render();
+            return container;
+        };
+
+        /**
+         * DEMO INIT
+         */
+        const demoContainer = document.getElementById('exercise-demo-container');
+
+        // Demo 1: Matching
+        demoContainer.appendChild(createMatchingExercise({
+            title: "Task 1: Matching",
+            description: "Match the problem with the solution.",
+            questions: [
+                { id: 'q1', question: "Dirty ocean", options: [{value:'a', label:'Clean it up'}, {value:'b', label:'Drink it'}], correctAnswer: 'a' },
+                { id: 'q2', question: "Plastic waste", options: [{value:'a', label:'Throw it'}, {value:'b', label:'Recycle it'}], correctAnswer: 'b' }
+            ]
+        }));
+
+        // Demo 2: Click to Place
+        demoContainer.appendChild(createClickToPlaceExercise({
+            title: "Task 2: Unscramble",
+            description: "Put the words in order.",
+            puzzles: [
+                { id: 'p1', chunks: ['Earth', 'is', 'home', 'our'], correctAnswer: "Earth is our home" }
+            ]
+        }));
+
+        // Demo 3: Sentence Builder
+        demoContainer.appendChild(createSentenceBuilder({
+            title: "Task 3: Column Builder",
+            description: "Translate: 'Biz sayyorani himoya qilishimiz kerak'",
+            columns: {
+                subject: { title: "Subject", items: ["We", "You", "People"] },
+                modal: { title: "Modal", items: ["should", "must", "can"] },
+                verb: { title: "Verb", items: ["protect", "recycle", "save"] },
+                obj: { title: "Object", items: ["the planet", "nature", "water"] }
+            },
+            prompts: [
+                { prompt: "Biz sayyorani himoya qilishimiz kerak", correctAnswer: "We should protect the planet" }
+            ]
+        }));
+
+    </script>
+</body>
+</html>

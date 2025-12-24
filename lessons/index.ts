@@ -26,6 +26,8 @@ import { Lesson23 } from './Lesson23';
 import { Lesson24 } from './Lesson24';
 import { Lesson25 } from './Lesson25';
 import { Lesson26 } from './Lesson26';
+import { Lesson27 } from './Lesson27';
+import { Lesson28 } from './Lesson28';
 
 export const lessons: Lesson[] = [
     {
@@ -183,5 +185,17 @@ export const lessons: Lesson[] = [
         title: "26-Dars: Ekologik Muammolar",
         description: "Tabiatni asrash va ekologik muammolar haqida ingliz tilida gapirishni o'rganing.",
         component: Lesson26,
+    },
+    {
+        id: 'lesson-27',
+        title: "27-Dars: So va Such (O'ta / Shunday)",
+        description: "Sifatlar va otlarni yanada kuchliroq tasvirlashni o'rganing.",
+        component: Lesson27,
+    },
+    {
+        id: 'lesson-28',
+        title: "28-Dars: Too va Enough (Juda / Yetarli)",
+        description: "Me'yor va daraja haqida gapirishni o'rganing.",
+        component: Lesson28,
     }
 ];
